@@ -15,8 +15,8 @@ const cleanMarkdownToPlainText = (markdown) => {
   text = text
     // Remove inline links: [Link text](url) -> Link text
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1")
-    // Remove raw links or image links
-    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, "$1")
+    // Keep image links intact for dynamic rendering
+    // .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, "$1")
     // Remove HTML comments
     .replace(/<!--[\s\S]*?-->/g, "")
     // Remove ATX-style headers: ### title -> title

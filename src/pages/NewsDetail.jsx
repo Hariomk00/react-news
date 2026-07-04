@@ -6,6 +6,60 @@ import Header from "../components/Header";
 import { Calendar, Tag, ArrowLeft } from "lucide-react";
 import { useSEO } from "../hooks/useSEO";
 
+const renderContent = (text) => {
+  if (!text) return null;
+
+  const imageRegex = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = imageRegex.exec(text)) !== null) {
+    const matchIndex = match.index;
+
+    if (matchIndex > lastIndex) {
+      parts.push(
+        <span key={`text-${lastIndex}`} className="whitespace-pre-line">
+          {text.substring(lastIndex, matchIndex)}
+        </span>
+      );
+    }
+
+    const alt = match[1] || "";
+    const src = match[2];
+
+    parts.push(
+      <span key={`img-${matchIndex}`} className="block my-6 rounded-2xl overflow-hidden shadow-md max-w-full bg-gray-100 dark:bg-gray-800">
+        <img
+          src={src}
+          alt={alt}
+          className="w-full h-auto object-cover max-h-[500px]"
+          onError={(e) => {
+            e.target.parentNode.style.display = "none";
+          }}
+        />
+        {alt && !alt.startsWith("Image") && (
+          <span className="block text-center text-xs text-gray-500 dark:text-gray-400 p-2 italic">
+            {alt}
+          </span>
+        )}
+      </span>
+    );
+
+    lastIndex = imageRegex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(
+      <span key={`text-${lastIndex}`} className="whitespace-pre-line">
+        {text.substring(lastIndex)}
+      </span>
+    );
+  }
+
+  return parts;
+};
+
 const NewsDetail = () => {
   const { id } = useParams();
   const [news, setNews] = useState(null);
@@ -136,8 +190,8 @@ const NewsDetail = () => {
             )}
 
             {/* Full News Content */}
-            <div className="mt-8 text-gray-700 dark:text-gray-300 leading-relaxed text-base md:text-lg whitespace-pre-line">
-              {news.full_content}
+            <div className="mt-8 text-gray-700 dark:text-gray-300 leading-relaxed text-base md:text-lg flex flex-col gap-4">
+              {renderContent(news.full_content)}
             </div>
           </article>
         )}

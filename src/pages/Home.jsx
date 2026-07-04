@@ -9,14 +9,9 @@ const Home = () => {
   useSEO();
   const [newsList, setNewsList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [bannerLoading, setBannerLoading] = useState(true);
   const [breakingNews, setBreakingNews] = useState("Stay tuned for live updates • PM Kisan Samman Nidhi Portal updates out • Rajveer sagai updates inside!");
-  const [featuredBanner, setFeaturedBanner] = useState({
-    tag: "Featured",
-    title: "Rajveer sagai hogi 32january",
-    content: "An exclusive update on Rajveer's special day. Click the banner image to check the PM Kisan Samman Nidhi status and details online on the official portal.",
-    link: "https://pmkisan.gov.in/",
-    image: "/AA1wQy2w.jpeg"
-  });
+  const [featuredBanner, setFeaturedBanner] = useState(null);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -54,15 +49,17 @@ const Home = () => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setFeaturedBanner({
-            tag: data.tag || "Featured",
-            title: data.title || "Rajveer sagai hogi 32january",
-            content: data.content || "An exclusive update on Rajveer's special day. Click the banner image to check the PM Kisan Samman Nidhi status and details online on the official portal.",
-            link: data.link || "https://pmkisan.gov.in/",
-            image: data.image || "/AA1wQy2w.jpeg"
+            tag: data.tag || "",
+            title: data.title || "",
+            content: data.content || "",
+            link: data.link || "",
+            image: data.image || ""
           });
         }
       } catch (error) {
         console.error("Error fetching featured banner:", error);
+      } finally {
+        setBannerLoading(false);
       }
     };
 
@@ -90,41 +87,59 @@ const Home = () => {
       {/* Main Body container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
-        <section className="mb-12 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-850">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:h-[450px]">
-            {/* Clickable Image */}
-            <a 
-              href={featuredBanner.link} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="h-[250px] md:h-full overflow-hidden block relative group"
-            >
-              <img 
-                src={featuredBanner.image} 
-                alt={featuredBanner.title}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80";
-                }}
-                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-              />
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition duration-300"></div>
-            </a>
-
-            {/* Content info */}
-            <div className="p-8 flex flex-col justify-center bg-gray-50/50 dark:bg-gray-900/50 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-800">
-              <span className="inline-block px-3 py-1 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold uppercase tracking-wider text-xs rounded-full mb-4 w-fit">
-                {featuredBanner.tag}
-              </span>
-              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight text-gray-900 dark:text-white">
-                {featuredBanner.title}
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-4 leading-relaxed text-sm md:text-base">
-                {featuredBanner.content}
-              </p>
+        {bannerLoading ? (
+          <section className="mb-12 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-850 animate-pulse">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:h-[450px]">
+              <div className="h-[250px] md:h-full bg-gray-200 dark:bg-gray-800"></div>
+              <div className="p-8 flex flex-col justify-center bg-gray-50/50 dark:bg-gray-900/50 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-800 space-y-4">
+                <div className="h-6 w-20 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
+                <div className="h-10 w-3/4 bg-gray-200 dark:bg-gray-800 rounded-lg"></div>
+                <div className="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded"></div>
+                <div className="h-4 w-5/6 bg-gray-200 dark:bg-gray-800 rounded"></div>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : featuredBanner && featuredBanner.image ? (
+          <section className="mb-12 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-850">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:h-[450px]">
+              {/* Clickable Image */}
+              <a 
+                href={featuredBanner.link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="h-[250px] md:h-full overflow-hidden block relative group"
+              >
+                <img 
+                  src={featuredBanner.image} 
+                  alt={featuredBanner.title}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80";
+                  }}
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                />
+                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition duration-300"></div>
+              </a>
+
+              {/* Content info */}
+              <div className="p-8 flex flex-col justify-center bg-gray-50/50 dark:bg-gray-900/50 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-800">
+                {featuredBanner.tag && (
+                  <span className="inline-block px-3 py-1 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold uppercase tracking-wider text-xs rounded-full mb-4 w-fit">
+                    {featuredBanner.tag}
+                  </span>
+                )}
+                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight text-gray-900 dark:text-white">
+                  {featuredBanner.title}
+                </h1>
+                {featuredBanner.content && (
+                  <p className="text-gray-500 dark:text-gray-400 mt-4 leading-relaxed text-sm md:text-base">
+                    {featuredBanner.content}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         {/* Latest News Title */}
         <div className="border-l-4 border-red-600 dark:border-red-500 pl-3 mb-8">

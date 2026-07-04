@@ -48,3 +48,23 @@ html {
 .animate-slideRight {
   animation: slideRight 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
+
+/* Hide Google Translate top bar frame and adjust body */
+.skiptranslate, .goog-te-banner-frame {
+  display: none !important;
+}
+body {
+  top: 0px !important;
+}
+.goog-logo-link {
+  display: none !important;
+}
+.goog-te-gadget {
+  font-size: 0px !important;
+}
+iframe.goog-te-banner-frame {
+  display: none !important;
+}
+div.skiptranslate {
+  display: none !important;
+}
