@@ -4,6 +4,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import Header from "../components/Header";
 import { Calendar, Tag, ArrowLeft } from "lucide-react";
+import { useSEO } from "../hooks/useSEO";
 
 const NewsDetail = () => {
   const { id } = useParams();
@@ -11,6 +12,13 @@ const NewsDetail = () => {
   const [categoryName, setCategoryName] = useState("Uncategorized");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useSEO({
+    title: news ? news.title : "News Article",
+    description: news ? news.short_desc : undefined,
+    image: news ? news.image : undefined,
+    type: "article"
+  });
 
   useEffect(() => {
     const fetchNewsDetail = async () => {

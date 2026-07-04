@@ -4,12 +4,12 @@ import { db } from "../../firebase";
 import AdminLayout from "../../components/AdminLayout";
 import { Plus, ToggleLeft, ToggleRight, Trash2, FolderPlus, ArrowLeft } from "lucide-react";
 
-// URL friendly slug function matching the PHP regex pattern
+// URL friendly slug function supporting Hindi and other Unicode characters
 const makeSlug = (string) => {
   return string
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, "-")
     .replace(/^-+|-+$/g, "");
 };
 

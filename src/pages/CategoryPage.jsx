@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { doc, getDoc, collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import Header from "../components/Header";
+import { useSEO } from "../hooks/useSEO";
 
 const CategoryPage = () => {
   const { id } = useParams();
@@ -10,6 +11,11 @@ const CategoryPage = () => {
   const [newsList, setNewsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useSEO({
+    title: categoryName ? `${categoryName} News` : "Category News",
+    description: categoryName ? `Browse the latest ${categoryName} news, breaking articles, and stories on Indiianews.` : undefined
+  });
 
   useEffect(() => {
     const fetchCategoryAndNews = async () => {

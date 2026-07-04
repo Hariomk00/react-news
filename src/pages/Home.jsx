@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { collection, query, orderBy, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import Header from "../components/Header";
+import { useSEO } from "../hooks/useSEO";
 
 const Home = () => {
+  useSEO();
   const [newsList, setNewsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [breakingNews, setBreakingNews] = useState("Stay tuned for live updates • PM Kisan Samman Nidhi Portal updates out • Rajveer sagai updates inside!");
@@ -72,13 +74,6 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <Header />
-
-      {/* Signature Bar */}
-      <div className="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 py-3 text-center">
-        <span className="text-sm font-semibold text-gray-500 dark:text-gray-400 italic tracking-wider">
-          Chief Editor: <span className="font-extrabold text-red-600 dark:text-red-500 not-italic">Hariom Kushawah</span>
-        </span>
-      </div>
 
       {/* Breaking News Marquee */}
       <div className="bg-red-600 dark:bg-red-700 text-white font-bold h-10 flex items-center overflow-hidden relative shadow-inner">
