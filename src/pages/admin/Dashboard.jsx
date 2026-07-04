@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, query, orderBy, limit, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../../firebase";
+import { db, storage, auth } from "../../firebase";
+import { updateEmail, updatePassword } from "firebase/auth";
 import AdminLayout from "../../components/AdminLayout";
-import { Newspaper, CalendarDays, Image, CalendarRange, PlusCircle, Settings, ClipboardList, Megaphone, Upload, Eye } from "lucide-react";
+import { Newspaper, CalendarDays, Image, CalendarRange, PlusCircle, Settings, ClipboardList, Megaphone, Upload, Eye, UserCog } from "lucide-react";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -33,6 +34,13 @@ const Dashboard = () => {
   const [bannerLoading, setBannerLoading] = useState(false);
   const [bannerSuccess, setBannerSuccess] = useState("");
   const [bannerError, setBannerError] = useState("");
+
+  // Change Credentials States
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [credLoading, setCredLoading] = useState(false);
+  const [credSuccess, setCredSuccess] = useState("");
+  const [credError, setCredError] = useState("");
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -211,6 +219,41 @@ const Dashboard = () => {
       setBannerError("Failed to update featured banner.");
     } finally {
       setBannerLoading(false);
+    }
+  };
+
+  const handleUpdateCredentials = async (e) => {
+    e.preventDefault();
+    setCredLoading(true);
+    setCredSuccess("");
+    setCredError("");
+
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error("No authenticated user found.");
+      }
+
+      if (newEmail.trim() && newEmail.trim() !== user.email) {
+        await updateEmail(user, newEmail.trim());
+      }
+
+      if (newPassword.trim()) {
+        await updatePassword(user, newPassword.trim());
+      }
+
+      setCredSuccess("Credentials updated successfully!");
+      setNewEmail("");
+      setNewPassword("");
+    } catch (err) {
+      console.error("Error updating credentials:", err);
+      if (err.code === "auth/requires-recent-login") {
+        setCredError("For security, please log out and log back in, then try again.");
+      } else {
+        setCredError(err.message || "Failed to update credentials.");
+      }
+    } finally {
+      setCredLoading(false);
     }
   };
 
@@ -524,6 +567,65 @@ const Dashboard = () => {
               {bannerError && (
                 <span className="text-xs text-red-600 dark:text-red-400 font-bold animate-fadeIn">
                   ✗ {bannerError}
+                </span>
+              )}
+            </div>
+          </form>
+        </div>
+
+        {/* Change Login Credentials Card */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-150 dark:border-gray-700">
+          <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 inline-flex items-center gap-2">
+            <UserCog size={18} className="text-red-500" />
+            Update Login Credentials
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+            Modify the admin login email and password. Leaving a field blank will keep it unchanged.
+          </p>
+
+          <form onSubmit={handleUpdateCredentials} className="space-y-4 max-w-lg">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                New Email Address
+              </label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="new-email@news.com"
+                className="block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white text-sm transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                New Password
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                className="block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white text-sm transition"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={credLoading}
+                className="py-2.5 px-6 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-extrabold uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-md font-sans"
+              >
+                {credLoading ? "Updating..." : "Update Credentials"}
+              </button>
+              {credSuccess && (
+                <span className="text-xs text-emerald-600 dark:text-emerald-450 font-bold animate-fadeIn">
+                  ✓ {credSuccess}
+                </span>
+              )}
+              {credError && (
+                <span className="text-xs text-red-600 dark:text-red-400 font-bold animate-fadeIn">
+                  ✗ {credError}
                 </span>
               )}
             </div>
