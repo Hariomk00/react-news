@@ -26,14 +26,14 @@ export const useSEO = ({ title, description, image, url, type = "website" } = {}
     // 3. Open Graph Meta Tags
     setMetaTag("property", "og:title", finalTitle);
     setMetaTag("property", "og:description", description || defaultDesc);
-    setMetaTag("property", "og:image", image || "/favicon.svg");
+    setMetaTag("property", "og:image", image || "/favicon.png");
     setMetaTag("property", "og:url", url || window.location.href);
     setMetaTag("property", "og:type", type);
 
     // 4. Twitter Card Meta Tags
     setMetaTag("name", "twitter:title", finalTitle);
     setMetaTag("name", "twitter:description", description || defaultDesc);
-    setMetaTag("name", "twitter:image", image || "/favicon.svg");
+    setMetaTag("name", "twitter:image", image || "/favicon.png");
     setMetaTag("name", "twitter:card", image ? "summary_large_image" : "summary");
 
   }, [title, description, image, url, type]);
