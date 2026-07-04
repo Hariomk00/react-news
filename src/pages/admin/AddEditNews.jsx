@@ -88,6 +88,15 @@ const AddEditNews = () => {
       const result = await response.json();
       if (result && result.data && result.data.content) {
         const cleanedText = cleanMarkdownToPlainText(result.data.content);
+        
+        // Auto-fill form fields from extracted Jina metadata if currently empty
+        if (!title.trim() && result.data.title) {
+          setTitle(result.data.title);
+        }
+        if (!shortDesc.trim() && result.data.description) {
+          setShortDesc(result.data.description);
+        }
+        
         // Append source attribution footer (plain text)
         const authorInfo = location.state?.prefilledNews?.author || "Original Source";
         const finalContent = `${cleanedText}\n\n---\nSource: ${authorInfo} - Read full article: ${targetUrl}`;
