@@ -176,6 +176,19 @@ const ImportNews = () => {
                   />
                   <Search size={18} className="absolute left-3.5 top-3.5 text-gray-400" />
                 </div>
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">Quick Filters:</span>
+                  {["Madhya Pradesh", "Morena", "Sabalgarh", "India News"].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setKeywords(tag)}
+                      className="text-[10px] px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-900 border border-gray-205 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:text-red-650 hover:bg-red-50/50 hover:border-red-200 dark:hover:text-red-400 dark:hover:bg-red-950/20 dark:hover:border-red-900 transition cursor-pointer"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Category dropdown */}
