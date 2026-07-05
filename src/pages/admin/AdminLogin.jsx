@@ -105,7 +105,7 @@ const AdminLogin = () => {
 
               {/* Full Arm & Hand Animations */}
               {/* Left Arm */}
-              <g className="transition-transform duration-500 ease-out" style={{ transformOrigin: "22px 90px", transform: (isPasswordFocused && !showPassword) ? "rotate(148deg)" : "rotate(0deg)" }}>
+              <g className="transition-transform duration-500 ease-out" style={{ transformOrigin: "22px 90px", transformBox: "view-box", transform: (isPasswordFocused && !showPassword) ? "rotate(148deg)" : "rotate(0deg)" }}>
                 {/* Forearm */}
                 <rect x="17" y="90" width="10" height="45" rx="5" fill="#8B4513" />
                 {/* Hand / Paws */}
@@ -115,7 +115,7 @@ const AdminLogin = () => {
                 <circle cx="25" cy="139" r="2" fill="#8B4513" />
               </g>
               {/* Right Arm */}
-              <g className="transition-transform duration-500 ease-out" style={{ transformOrigin: "98px 90px", transform: (isPasswordFocused && !showPassword) ? "rotate(-148deg)" : "rotate(0deg)" }}>
+              <g className="transition-transform duration-500 ease-out" style={{ transformOrigin: "98px 90px", transformBox: "view-box", transform: (isPasswordFocused && !showPassword) ? "rotate(-148deg)" : "rotate(0deg)" }}>
                 {/* Forearm */}
                 <rect x="93" y="90" width="10" height="45" rx="5" fill="#8B4513" />
                 {/* Hand / Paws */}
