@@ -10,6 +10,7 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const navigate = useNavigate();
 
   // Redirect if already logged in
@@ -97,6 +98,62 @@ const AdminLogin = () => {
 
         {/* Right Panel: Login Form */}
         <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white dark:bg-gray-900/40">
+          
+          {/* Animated Monkey Container */}
+          <div className="flex justify-center mb-6">
+            <div className="w-24 h-24 bg-slate-50 dark:bg-gray-800 rounded-full flex items-center justify-center p-2 shadow-inner border border-gray-100 dark:border-gray-850">
+              <svg viewBox="0 0 120 120" className="w-full h-full">
+                {/* Ears */}
+                <circle cx="25" cy="60" r="12" fill="#8B4513" />
+                <circle cx="25" cy="60" r="7" fill="#F5DEB3" />
+                <circle cx="95" cy="60" r="12" fill="#8B4513" />
+                <circle cx="95" cy="60" r="7" fill="#F5DEB3" />
+
+                {/* Head background */}
+                <circle cx="60" cy="60" r="40" fill="#8B4513" />
+
+                {/* Face mask (heartish shape) */}
+                <circle cx="46" cy="55" r="16" fill="#F5DEB3" />
+                <circle cx="74" cy="55" r="16" fill="#F5DEB3" />
+                <ellipse cx="60" cy="72" rx="26" ry="18" fill="#F5DEB3" />
+
+                {/* Eyes */}
+                <g>
+                  {/* Left Eye */}
+                  <circle cx="46" cy="52" r="5" fill="white" />
+                  <circle cx="46" cy="52" r="2.5" fill="black" />
+                  {/* Right Eye */}
+                  <circle cx="74" cy="52" r="5" fill="white" />
+                  <circle cx="74" cy="52" r="2.5" fill="black" />
+                </g>
+
+                {/* Nose & Mouth */}
+                <polygon points="58,63 62,63 60,67" fill="#5C2E0B" />
+                <path d="M 52 74 Q 60 80 68 74" stroke="#5C2E0B" strokeWidth="2" fill="none" />
+
+                {/* Cheeks */}
+                <circle cx="38" cy="66" r="3" fill="#FFA07A" opacity="0.6" />
+                <circle cx="82" cy="66" r="3" fill="#FFA07A" opacity="0.6" />
+
+                {/* Hands */}
+                {/* Left Hand */}
+                <g className="transition-transform duration-500 ease-out" style={{ transform: (isPasswordFocused && !showPassword) ? 'translate(6px, -53px)' : 'translate(0px, 0px)' }}>
+                  <circle cx="40" cy="110" r="8" fill="#8B4513" />
+                  <circle cx="37" cy="103" r="2.5" fill="#8B4513" />
+                  <circle cx="40" cy="101" r="2.5" fill="#8B4513" />
+                  <circle cx="43" cy="103" r="2.5" fill="#8B4513" />
+                </g>
+                {/* Right Hand */}
+                <g className="transition-transform duration-500 ease-out" style={{ transform: (isPasswordFocused && !showPassword) ? 'translate(-6px, -53px)' : 'translate(0px, 0px)' }}>
+                  <circle cx="80" cy="110" r="8" fill="#8B4513" />
+                  <circle cx="77" cy="103" r="2.5" fill="#8B4513" />
+                  <circle cx="80" cy="101" r="2.5" fill="#8B4513" />
+                  <circle cx="83" cy="103" r="2.5" fill="#8B4513" />
+                </g>
+              </svg>
+            </div>
+          </div>
+
           <div className="mb-8">
             <h2 className="text-3xl font-extrabold text-gray-950 dark:text-white tracking-tight">
               LOGIN
@@ -149,6 +206,8 @@ const AdminLogin = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
                   placeholder="••••••••"
                   className="block w-full pl-11 pr-11 py-3.5 border border-gray-200 dark:border-gray-700 rounded-2xl bg-gray-50 dark:bg-gray-800/40 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-gray-950 dark:text-white text-sm transition"
                 />
