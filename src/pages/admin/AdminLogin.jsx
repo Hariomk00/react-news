@@ -105,24 +105,24 @@ const AdminLogin = () => {
 
               {/* Full Arm & Hand Animations */}
               {/* Left Arm */}
-              <g className="transition-transform duration-500 ease-out" style={{ transformOrigin: "22px 90px", transformBox: "view-box", transform: (isPasswordFocused && !showPassword) ? "rotate(148deg)" : "rotate(0deg)" }}>
+              <g className="transition-transform duration-500 ease-out" style={{ transform: (isPasswordFocused && !showPassword) ? "translate(22px, 90px) rotate(148deg)" : "translate(22px, 90px) rotate(0deg)" }}>
                 {/* Forearm */}
-                <rect x="17" y="90" width="10" height="45" rx="5" fill="#8B4513" />
+                <rect x="-5" y="0" width="10" height="45" rx="5" fill="#8B4513" />
                 {/* Hand / Paws */}
-                <circle cx="22" cy="135" r="8" fill="#8B4513" />
-                <circle cx="19" cy="139" r="2" fill="#8B4513" />
-                <circle cx="22" cy="141" r="2" fill="#8B4513" />
-                <circle cx="25" cy="139" r="2" fill="#8B4513" />
+                <circle cx="0" cy="45" r="8" fill="#8B4513" />
+                <circle cx="-3" cy="49" r="2" fill="#8B4513" />
+                <circle cx="0" cy="51" r="2" fill="#8B4513" />
+                <circle cx="3" cy="49" r="2" fill="#8B4513" />
               </g>
               {/* Right Arm */}
-              <g className="transition-transform duration-500 ease-out" style={{ transformOrigin: "98px 90px", transformBox: "view-box", transform: (isPasswordFocused && !showPassword) ? "rotate(-148deg)" : "rotate(0deg)" }}>
+              <g className="transition-transform duration-500 ease-out" style={{ transform: (isPasswordFocused && !showPassword) ? "translate(98px, 90px) rotate(-148deg)" : "translate(98px, 90px) rotate(0deg)" }}>
                 {/* Forearm */}
-                <rect x="93" y="90" width="10" height="45" rx="5" fill="#8B4513" />
+                <rect x="-5" y="0" width="10" height="45" rx="5" fill="#8B4513" />
                 {/* Hand / Paws */}
-                <circle cx="98" cy="135" r="8" fill="#8B4513" />
-                <circle cx="95" cy="139" r="2" fill="#8B4513" />
-                <circle cx="98" cy="141" r="2" fill="#8B4513" />
-                <circle cx="101" cy="139" r="2" fill="#8B4513" />
+                <circle cx="0" cy="45" r="8" fill="#8B4513" />
+                <circle cx="-3" cy="49" r="2" fill="#8B4513" />
+                <circle cx="0" cy="51" r="2" fill="#8B4513" />
+                <circle cx="3" cy="49" r="2" fill="#8B4513" />
               </g>
             </svg>
           </div>
