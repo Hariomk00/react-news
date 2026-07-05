@@ -41,6 +41,51 @@ const cleanMarkdownToPlainText = (markdown) => {
   return text;
 };
 
+// Helper function to compress and convert image files to base64 Data URIs
+const compressAndConvertToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        // Define max dimensions (e.g., 800px width/height)
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress as JPEG with 0.7 quality to keep document under Firestore limits
+        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+        resolve(compressedBase64);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 const AddEditNews = () => {
   const { id } = useParams(); // If present, we are editing
   const isEdit = !!id;
@@ -259,10 +304,14 @@ const AddEditNews = () => {
             }
           }
 
-          const fileName = `${Date.now()}_${imageFile.name}`;
-          const imageStorageRef = ref(storage, `news/${fileName}`);
-          const uploadSnapshot = await uploadBytes(imageStorageRef, imageFile);
-          finalImageUrl = await getDownloadURL(uploadSnapshot.ref);
+          try {
+            finalImageUrl = await compressAndConvertToBase64(imageFile);
+          } catch (compressErr) {
+            console.error("Failed to process image:", compressErr);
+            setError("Failed to process and compress the uploaded image. Please try a different image.");
+            setLoading(false);
+            return;
+          }
         }
       } else {
         // Use direct image URL
