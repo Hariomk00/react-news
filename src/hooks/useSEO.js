@@ -3,7 +3,7 @@ import { useEffect } from "react";
 export const useSEO = ({ title, description, image, url, type = "website" } = {}) => {
   useEffect(() => {
     // 1. Update Title
-    const finalTitle = title ? `${title} | Indiianews` : "Indiianews | Latest Hindi & English News Updates";
+    const finalTitle = title ? `${title} | Indiianews` : "Indiianews | Latest Hindi & English News Updates | हिंदी न्यूज़, ताज़ा खबर";
     document.title = finalTitle;
 
     // Helper to set or update meta tag
