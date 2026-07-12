@@ -114,13 +114,13 @@ const Home = () => {
                 style={{ transform: `translateX(-${currentSlideIndex * 100}%)` }}
               >
                 {displaySlides.map((slide) => (
-                  <div key={slide.id} className="min-w-full w-full h-full flex flex-col md:flex-row relative">
-                    {/* Clickable Slide Image */}
+                  <div key={slide.id} className="min-w-full w-full h-full relative">
+                    {/* Clickable Slide Image - spanning whole card */}
                     <a 
                       href={slide.link} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="w-full md:w-1/2 h-[180px] md:h-full overflow-hidden block relative group/img"
+                      className="w-full h-full overflow-hidden block relative group/img"
                     >
                       <img 
                         src={slide.image} 
@@ -129,30 +129,32 @@ const Home = () => {
                           e.target.onerror = null;
                           e.target.src = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80";
                         }}
-                        className="w-full h-full object-cover group-hover/img:scale-105 transition duration-500"
+                        className="w-full h-full object-cover group-hover/img:scale-102 transition duration-500"
                       />
                       <div className="absolute inset-0 bg-black/10 group-hover/img:bg-black/0 transition duration-300"></div>
                     </a>
 
-                    {/* Content / Info Card */}
-                    <div className="flex-1 p-6 md:p-12 flex flex-col justify-center bg-gray-50/50 dark:bg-gray-900/50 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-800">
-                      <span className="inline-block px-3 py-1 bg-red-100 dark:bg-red-950/40 text-red-655 dark:text-red-400 font-bold uppercase tracking-wider text-xs rounded-full mb-4 w-fit">
-                        Scheme Alert
-                      </span>
-                      <h2 className="text-xl md:text-3xl font-extrabold tracking-tight leading-tight text-gray-900 dark:text-white line-clamp-3">
-                        {slide.description || "Government Scheme Updates"}
-                      </h2>
-                      {slide.link && (
-                        <a 
-                          href={slide.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-6 inline-flex items-center gap-1.5 text-xs md:text-sm font-extrabold uppercase tracking-wider text-red-655 dark:text-red-400 hover:text-red-750 dark:hover:text-red-300 transition"
-                        >
-                          Check Status & Apply Online &rarr;
-                        </a>
-                      )}
-                    </div>
+                    {/* Content overlay on top of the image */}
+                    {slide.description && (
+                      <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none z-10">
+                        <span className="inline-block px-3 py-1 bg-red-600 text-white font-bold uppercase tracking-wider text-[10px] md:text-xs rounded-full mb-3 w-fit pointer-events-auto">
+                          Scheme Alert
+                        </span>
+                        <h2 className="text-lg md:text-2xl font-black tracking-tight leading-tight text-white drop-shadow-md line-clamp-2 md:max-w-3xl">
+                          {slide.description}
+                        </h2>
+                        {slide.link && (
+                          <a 
+                            href={slide.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 inline-flex items-center gap-1 text-xs md:text-sm font-extrabold uppercase tracking-wider text-red-405 hover:text-red-305 transition pointer-events-auto w-fit"
+                          >
+                            Check Status & Apply Online &rarr;
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
