@@ -12,7 +12,17 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [bannerLoading, setBannerLoading] = useState(true);
   const [breakingNews, setBreakingNews] = useState("Stay tuned for live updates • PM Kisan Samman Nidhi Portal updates out • Rajveer sagai updates inside!");
-  const [featuredBanner, setFeaturedBanner] = useState(null);
+  const [slides, setSlides] = useState([]);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+  const displaySlides = slides.length > 0 ? slides : [
+    {
+      id: "default-1",
+      image: "/AA1wQy2w.jpeg",
+      link: "https://pmkisan.gov.in/",
+      description: "PM Kisan Samman Nidhi Portal updates out • Check status and details online."
+    }
+  ];
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -43,22 +53,17 @@ const Home = () => {
       }
     };
 
-    const fetchFeaturedBanner = async () => {
+    const fetchSlides = async () => {
       try {
-        const docRef = doc(db, "settings", "featured_banner");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setFeaturedBanner({
-            tag: data.tag || "",
-            title: data.title || "",
-            content: data.content || "",
-            link: data.link || "",
-            image: data.image || ""
-          });
-        }
+        const q = query(collection(db, "slides"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        const list = [];
+        querySnapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        setSlides(list);
       } catch (error) {
-        console.error("Error fetching featured banner:", error);
+        console.error("Error fetching slides:", error);
       } finally {
         setBannerLoading(false);
       }
@@ -66,8 +71,16 @@ const Home = () => {
 
     fetchNews();
     fetchBreakingNews();
-    fetchFeaturedBanner();
+    fetchSlides();
   }, []);
+
+  useEffect(() => {
+    if (displaySlides.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentSlideIndex((prevIndex) => (prevIndex + 1) % displaySlides.length);
+    }, 5000); // Change slide every 5 seconds
+    return () => clearInterval(interval);
+  }, [displaySlides]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
@@ -87,57 +100,78 @@ const Home = () => {
 
       {/* Main Body container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section */}
+        {/* Scheme Slides Carousel */}
         {bannerLoading ? (
-          <section className="mb-12 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-850 animate-pulse">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:h-[450px]">
-              <div className="h-[250px] md:h-full bg-gray-200 dark:bg-gray-800"></div>
-              <div className="p-8 flex flex-col justify-center bg-gray-50/50 dark:bg-gray-900/50 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-800 space-y-4">
-                <div className="h-6 w-20 bg-gray-200 dark:bg-gray-800 rounded-full"></div>
-                <div className="h-10 w-3/4 bg-gray-200 dark:bg-gray-800 rounded-lg"></div>
-                <div className="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded"></div>
-                <div className="h-4 w-5/6 bg-gray-200 dark:bg-gray-800 rounded"></div>
-              </div>
-            </div>
+          <section className="mb-12 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-850 animate-pulse h-[300px] md:h-[450px]">
+            <div className="w-full h-full bg-gray-200 dark:bg-gray-800"></div>
           </section>
-        ) : featuredBanner && featuredBanner.image ? (
-          <section className="mb-12 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-850">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:h-[450px]">
-              {/* Clickable Image */}
-              <a 
-                href={featuredBanner.link} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="h-[250px] md:h-full overflow-hidden block relative group"
+        ) : displaySlides.length > 0 ? (
+          <section className="mb-12 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-lg border border-gray-100 dark:border-gray-850 relative group">
+            <div className="relative w-full overflow-hidden h-[300px] md:h-[450px]">
+              {/* Carousel Slides Container */}
+              <div 
+                className="flex w-full h-full transition-transform duration-700 ease-in-out"
+                style={{ transform: `translateX(-${currentSlideIndex * 100}%)` }}
               >
-                <img 
-                  src={featuredBanner.image} 
-                  alt={featuredBanner.title}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80";
-                  }}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition duration-300"></div>
-              </a>
+                {displaySlides.map((slide) => (
+                  <div key={slide.id} className="min-w-full w-full h-full flex flex-col md:flex-row relative">
+                    {/* Clickable Slide Image */}
+                    <a 
+                      href={slide.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="w-full md:w-1/2 h-[180px] md:h-full overflow-hidden block relative group/img"
+                    >
+                      <img 
+                        src={slide.image} 
+                        alt={slide.description || "Scheme slide"}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80";
+                        }}
+                        className="w-full h-full object-cover group-hover/img:scale-105 transition duration-500"
+                      />
+                      <div className="absolute inset-0 bg-black/10 group-hover/img:bg-black/0 transition duration-300"></div>
+                    </a>
 
-              {/* Content info */}
-              <div className="p-8 flex flex-col justify-center bg-gray-50/50 dark:bg-gray-900/50 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-800">
-                {featuredBanner.tag && (
-                  <span className="inline-block px-3 py-1 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold uppercase tracking-wider text-xs rounded-full mb-4 w-fit">
-                    {featuredBanner.tag}
-                  </span>
-                )}
-                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight text-gray-900 dark:text-white">
-                  {featuredBanner.title}
-                </h1>
-                {featuredBanner.content && (
-                  <p className="text-gray-500 dark:text-gray-400 mt-4 leading-relaxed text-sm md:text-base">
-                    {featuredBanner.content}
-                  </p>
-                )}
+                    {/* Content / Info Card */}
+                    <div className="flex-1 p-6 md:p-12 flex flex-col justify-center bg-gray-50/50 dark:bg-gray-900/50 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-800">
+                      <span className="inline-block px-3 py-1 bg-red-100 dark:bg-red-950/40 text-red-655 dark:text-red-400 font-bold uppercase tracking-wider text-xs rounded-full mb-4 w-fit">
+                        Scheme Alert
+                      </span>
+                      <h2 className="text-xl md:text-3xl font-extrabold tracking-tight leading-tight text-gray-900 dark:text-white line-clamp-3">
+                        {slide.description || "Government Scheme Updates"}
+                      </h2>
+                      {slide.link && (
+                        <a 
+                          href={slide.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-6 inline-flex items-center gap-1.5 text-xs md:text-sm font-extrabold uppercase tracking-wider text-red-655 dark:text-red-400 hover:text-red-750 dark:hover:text-red-300 transition"
+                        >
+                          Check Status & Apply Online &rarr;
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
+
+              {/* Navigation Indicators / Dots */}
+              {displaySlides.length > 1 && (
+                <div className="absolute bottom-4 right-4 flex gap-1.5 z-20">
+                  {displaySlides.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlideIndex(index)}
+                      className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                        currentSlideIndex === index ? "w-6 bg-red-600" : "w-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400"
+                      }`}
+                      title={`Go to slide ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         ) : null}

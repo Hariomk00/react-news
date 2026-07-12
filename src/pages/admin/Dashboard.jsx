@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, query, orderBy, limit, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage, auth } from "../../firebase";
 import { updateEmail, updatePassword } from "firebase/auth";
 import AdminLayout from "../../components/AdminLayout";
-import { Newspaper, CalendarDays, Image, CalendarRange, PlusCircle, Settings, ClipboardList, Megaphone, Upload, Eye, UserCog } from "lucide-react";
+import { Newspaper, CalendarDays, Image, CalendarRange, PlusCircle, Settings, ClipboardList, Megaphone, Upload, Eye, UserCog, Trash2, Plus, ExternalLink } from "lucide-react";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -22,18 +22,17 @@ const Dashboard = () => {
   const [breakingSuccess, setBreakingSuccess] = useState("");
   const [breakingError, setBreakingError] = useState("");
 
-  // Featured Banner States
-  const [bannerTag, setBannerTag] = useState("Featured");
-  const [bannerTitle, setBannerTitle] = useState("");
-  const [bannerContent, setBannerContent] = useState("");
-  const [bannerLink, setBannerLink] = useState("");
-  const [bannerImageType, setBannerImageType] = useState("url"); // "url" or "upload"
-  const [bannerImageUrl, setBannerImageUrl] = useState("");
-  const [bannerImageFile, setBannerImageFile] = useState(null);
-  const [bannerImagePreview, setBannerImagePreview] = useState("");
-  const [bannerLoading, setBannerLoading] = useState(false);
-  const [bannerSuccess, setBannerSuccess] = useState("");
-  const [bannerError, setBannerError] = useState("");
+  // Slides States
+  const [slides, setSlides] = useState([]);
+  const [slideDescription, setSlideDescription] = useState("");
+  const [slideLink, setSlideLink] = useState("");
+  const [slideImageType, setSlideImageType] = useState("upload"); // "upload" or "url"
+  const [slideImageUrl, setSlideImageUrl] = useState("");
+  const [slideImageFile, setSlideImageFile] = useState(null);
+  const [slideImagePreview, setSlideImagePreview] = useState("");
+  const [slideLoading, setSlideLoading] = useState(false);
+  const [slideSuccess, setSlideSuccess] = useState("");
+  const [slideError, setSlideError] = useState("");
 
   // Change Credentials States
   const [newEmail, setNewEmail] = useState("");
@@ -46,17 +45,14 @@ const Dashboard = () => {
     const fetchStats = async () => {
       try {
         const newsRef = collection(db, "news");
-        // Get all news to calculate counts
         const querySnapshot = await getDocs(newsRef);
         const docs = [];
         querySnapshot.forEach((doc) => {
           docs.push(doc.data());
         });
 
-        // 1. Total News
         const totalNews = docs.length;
 
-        // 2. Today's News
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayNews = docs.filter((item) => {
@@ -65,13 +61,10 @@ const Dashboard = () => {
           return date.getTime() === today.getTime();
         }).length;
 
-        // 3. News with image
         const imageNews = docs.filter((item) => item.image && item.image !== "").length;
 
-        // 4. Latest News Date
         let latestDate = "N/A";
         if (totalNews > 0) {
-          // Sort items by date desc
           const sorted = docs.sort((a, b) => {
             const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime();
             const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime();
@@ -109,37 +102,20 @@ const Dashboard = () => {
     };
     fetchBreakingNews();
 
-    const fetchFeaturedBanner = async () => {
+    const fetchSlides = async () => {
       try {
-        const docRef = doc(db, "settings", "featured_banner");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setBannerTag(data.tag || "Featured");
-          setBannerTitle(data.title || "");
-          setBannerContent(data.content || "");
-          setBannerLink(data.link || "");
-          setBannerImageUrl(data.image || "");
-          setBannerImagePreview(data.image || "");
-          if (data.image && !data.image.includes("firebasestorage.googleapis.com")) {
-            setBannerImageType("url");
-          } else {
-            setBannerImageType("upload");
-          }
-        } else {
-          setBannerTag("Featured");
-          setBannerTitle("Rajveer sagai hogi 32january");
-          setBannerContent("An exclusive update on Rajveer's special day. Click the banner image to check the PM Kisan Samman Nidhi status and details online on the official portal.");
-          setBannerLink("https://pmkisan.gov.in/");
-          setBannerImageUrl("/AA1wQy2w.jpeg");
-          setBannerImagePreview("/AA1wQy2w.jpeg");
-          setBannerImageType("url");
-        }
+        const q = query(collection(db, "slides"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        const list = [];
+        querySnapshot.forEach((doc) => {
+          list.push({ id: doc.id, ...doc.data() });
+        });
+        setSlides(list);
       } catch (err) {
-        console.error("Error fetching featured banner:", err);
+        console.error("Error fetching slides:", err);
       }
     };
-    fetchFeaturedBanner();
+    fetchSlides();
   }, []);
 
   const handleUpdateBreakingNews = async (e) => {
@@ -164,61 +140,120 @@ const Dashboard = () => {
     }
   };
 
-  // Sync featured banner image preview reactively
-  useEffect(() => {
-    let objectUrl = "";
-    if (bannerImageType === "upload") {
-      if (bannerImageFile) {
-        objectUrl = URL.createObjectURL(bannerImageFile);
-        setBannerImagePreview(objectUrl);
-      } else {
-        setBannerImagePreview(bannerImageUrl);
-      }
-    } else {
-      setBannerImagePreview(bannerImageUrl);
-    }
+  const compressAndConvertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
 
-    return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 600;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress as JPEG with 0.7 quality to keep document under Firestore limits
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+          resolve(compressedBase64);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleSlideImageChange = (file) => {
+    if (!file) return;
+    setSlideImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSlideImagePreview(reader.result);
     };
-  }, [bannerImageType, bannerImageFile, bannerImageUrl]);
+    reader.readAsDataURL(file);
+  };
 
-  const handleUpdateFeaturedBanner = async (e) => {
+  const handleSaveSlide = async (e) => {
     e.preventDefault();
-    setBannerLoading(true);
-    setBannerSuccess("");
-    setBannerError("");
+    setSlideLoading(true);
+    setSlideSuccess("");
+    setSlideError("");
 
     try {
-      let finalImageUrl = bannerImageUrl;
+      let finalImageUrl = "";
 
-      if (bannerImageType === "upload" && bannerImageFile) {
-        const fileName = `featured_${Date.now()}_${bannerImageFile.name}`;
-        const storageRef = ref(storage, `settings/${fileName}`);
-        const snapshot = await uploadBytes(storageRef, bannerImageFile);
-        finalImageUrl = await getDownloadURL(snapshot.ref);
-        setBannerImageUrl(finalImageUrl);
+      if (slideImageType === "upload") {
+        if (!slideImageFile) {
+          throw new Error("Please select an image file to upload.");
+        }
+        finalImageUrl = await compressAndConvertToBase64(slideImageFile);
+      } else {
+        if (!slideImageUrl.trim()) {
+          throw new Error("Please enter an image URL.");
+        }
+        finalImageUrl = slideImageUrl.trim();
       }
 
-      const docRef = doc(db, "settings", "featured_banner");
-      await setDoc(docRef, {
-        tag: bannerTag,
-        title: bannerTitle,
-        content: bannerContent,
-        link: bannerLink,
+      await addDoc(collection(db, "slides"), {
         image: finalImageUrl,
-        updatedAt: new Date(),
-      }, { merge: true });
+        link: slideLink.trim() || "",
+        description: slideDescription.trim() || "",
+        createdAt: new Date(),
+      });
 
-      setBannerSuccess("Featured banner updated successfully!");
-      setTimeout(() => setBannerSuccess(""), 3000);
+      setSlideSuccess("Scheme slide added successfully!");
+      setSlideDescription("");
+      setSlideLink("");
+      setSlideImageUrl("");
+      setSlideImageFile(null);
+      setSlideImagePreview("");
+      
+      // Refresh the slides list
+      const q = query(collection(db, "slides"), orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setSlides(list);
+
+      setTimeout(() => setSlideSuccess(""), 3000);
     } catch (err) {
-      console.error("Error updating featured banner:", err);
-      setBannerError("Failed to update featured banner.");
+      console.error("Error adding slide:", err);
+      setSlideError(err.message || "Failed to add slide.");
     } finally {
-      setBannerLoading(false);
+      setSlideLoading(false);
+    }
+  };
+
+  const handleDeleteSlide = async (slideId) => {
+    if (!window.confirm("Are you sure you want to delete this slide?")) return;
+    try {
+      await deleteDoc(doc(db, "slides", slideId));
+      setSlides(slides.filter((slide) => slide.id !== slideId));
+    } catch (err) {
+      console.error("Error deleting slide:", err);
+      alert("Failed to delete slide.");
     }
   };
 
@@ -387,161 +422,138 @@ const Dashboard = () => {
           </form>
         </div>
 
-        {/* Featured Banner Manager */}
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-150 dark:border-gray-700">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 border-b border-gray-100 dark:border-gray-700 pb-3 flex items-center gap-2">
-            <Image className="text-red-600 dark:text-red-500 animate-pulse" size={20} />
-            🎯 Homepage Featured Banner (Ads / Schemes)
-          </h3>
-          <form onSubmit={handleUpdateFeaturedBanner} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Tag */}
+        {/* Scheme Slides (Carousel) Manager Card */}
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-150 dark:border-gray-700 space-y-8">
+          <div className="border-b border-gray-100 dark:border-gray-700 pb-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Megaphone className="text-red-600 dark:text-red-500 animate-pulse" size={20} />
+              📢 Scheme Slides Manager (Auto-Sliding Carousel)
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Add and manage scheme slides that automatically cycle on the homepage.
+            </p>
+          </div>
+
+          {/* Form to Add Slide */}
+          <form onSubmit={handleSaveSlide} className="space-y-6">
+            <h4 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">
+              ➕ Add New Scheme Slide
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Short Description */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Banner Tag
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Short Description / Title
                 </label>
                 <input
                   type="text"
                   required
-                  value={bannerTag}
-                  onChange={(e) => setBannerTag(e.target.value)}
-                  placeholder="e.g. Featured, Govt Scheme, Sponsored"
+                  value={slideDescription}
+                  onChange={(e) => setSlideDescription(e.target.value)}
+                  placeholder="e.g. कौशल युवा से बनता विकसित भारत"
                   className="block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white text-sm transition"
                 />
               </div>
 
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Banner Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={bannerTitle}
-                  onChange={(e) => setBannerTitle(e.target.value)}
-                  placeholder="e.g. Rajveer sagai hogi 32january"
-                  className="block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white text-sm transition"
-                />
-              </div>
-            </div>
-
-            {/* Description/Content */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Banner Description
-              </label>
-              <textarea
-                required
-                value={bannerContent}
-                onChange={(e) => setBannerContent(e.target.value)}
-                placeholder="Write the banner content here..."
-                rows={3}
-                className="block w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white text-sm transition resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Redirect Action Link */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Action Link / Redirect URL
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Redirect URL / Link
                 </label>
                 <input
                   type="url"
                   required
-                  value={bannerLink}
-                  onChange={(e) => setBannerLink(e.target.value)}
-                  placeholder="https://pmkisan.gov.in/"
+                  value={slideLink}
+                  onChange={(e) => setSlideLink(e.target.value)}
+                  placeholder="e.g. https://pmkivy.gov.in"
                   className="block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white text-sm transition"
                 />
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Image Source Selection */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Image Source
                 </label>
                 <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-750">
                   <button
                     type="button"
-                    onClick={() => setBannerImageType("url")}
+                    onClick={() => setSlideImageType("upload")}
                     className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      bannerImageType === "url"
-                        ? "bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                    }`}
-                  >
-                    Image URL
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBannerImageType("upload")}
-                    className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                      bannerImageType === "upload"
-                        ? "bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 shadow-sm"
+                      slideImageType === "upload"
+                        ? "bg-white dark:bg-gray-800 text-red-650 dark:text-red-400 shadow-sm"
                         : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                     }`}
                   >
                     Upload File
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setSlideImageType("url")}
+                    className={`py-1.5 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      slideImageType === "url"
+                        ? "bg-white dark:bg-gray-800 text-red-650 dark:text-red-400 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    Image URL
+                  </button>
                 </div>
               </div>
-            </div>
 
-            {/* Image Inputs */}
-            {bannerImageType === "url" ? (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={bannerImageUrl}
-                  onChange={(e) => setBannerImageUrl(e.target.value)}
-                  placeholder="/AA1wQy2w.jpeg or https://example.com/image.jpg"
-                  className="block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white text-sm transition"
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Upload Image File
-                </label>
-                <div className="mt-1 flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-gray-50 dark:bg-gray-900">
-                  <div className="space-y-1 text-center">
-                    <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                    <div className="flex text-xs text-gray-600 dark:text-gray-400 justify-center">
-                      <label className="relative cursor-pointer rounded-md font-bold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 focus-within:outline-none">
-                        <span>Upload a file</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => setBannerImageFile(e.target.files[0])}
-                          className="sr-only"
-                        />
-                      </label>
+              {/* Conditional Inputs */}
+              {slideImageType === "url" ? (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Image URL
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={slideImageUrl}
+                    onChange={(e) => setSlideImageUrl(e.target.value)}
+                    placeholder="https://example.com/slide.jpg"
+                    className="block w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white text-sm transition"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Upload Image File
+                  </label>
+                  <div className="flex items-center justify-center border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-900">
+                    <div className="space-y-1 text-center">
+                      <Upload className="mx-auto h-6 w-6 text-gray-400" />
+                      <div className="flex text-xs text-gray-600 dark:text-gray-400 justify-center">
+                        <label className="relative cursor-pointer rounded-md font-bold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 focus-within:outline-none">
+                          <span>Upload a file</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleSlideImageChange(e.target.files[0])}
+                            className="sr-only"
+                          />
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Preview Banner Image */}
-            {bannerImagePreview && (
-              <div className="mt-2">
+            {/* Preview Selected Slide Image */}
+            {slideImagePreview && (
+              <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Image Preview
                 </label>
                 <div className="relative rounded-xl overflow-hidden shadow-sm max-w-xs border border-gray-150 dark:border-gray-700">
                   <img
-                    src={bannerImagePreview}
-                    alt="Banner Preview"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80";
-                    }}
+                    src={slideImagePreview}
+                    alt="Slide Preview"
                     className="w-full h-32 object-cover"
                   />
                   <div className="absolute top-2 right-2 bg-black/60 text-white p-1 rounded-full flex items-center gap-1 text-[10px]">
@@ -551,26 +563,83 @@ const Dashboard = () => {
               </div>
             )}
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-3">
               <button
                 type="submit"
-                disabled={bannerLoading}
+                disabled={slideLoading}
                 className="py-2.5 px-6 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-extrabold uppercase tracking-wider rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-md font-sans"
               >
-                {bannerLoading ? "Updating..." : "Update Featured Banner"}
+                {slideLoading ? "Adding Slide..." : "Add Scheme Slide"}
               </button>
-              {bannerSuccess && (
+              {slideSuccess && (
                 <span className="text-xs text-emerald-600 dark:text-emerald-450 font-bold animate-fadeIn">
-                  ✓ {bannerSuccess}
+                  ✓ {slideSuccess}
                 </span>
               )}
-              {bannerError && (
+              {slideError && (
                 <span className="text-xs text-red-600 dark:text-red-400 font-bold animate-fadeIn">
-                  ✗ {bannerError}
+                  ✗ {slideError}
                 </span>
               )}
             </div>
           </form>
+
+          {/* List of Existing Slides */}
+          <div className="space-y-4 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <h4 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">
+              📁 Manage Current Slides ({slides.length})
+            </h4>
+
+            {slides.length === 0 ? (
+              <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+                No slides uploaded yet. Add slides above to show them on the home page.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {slides.map((slide) => (
+                  <div
+                    key={slide.id}
+                    className="flex flex-col bg-gray-50 dark:bg-gray-900 border border-gray-150 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow relative group transition duration-200"
+                  >
+                    <div className="h-32 overflow-hidden relative">
+                      <img
+                        src={slide.image}
+                        alt={slide.description}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80";
+                        }}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() => handleDeleteSlide(slide.id)}
+                        className="absolute top-2 right-2 p-2 bg-red-650/90 hover:bg-red-750 text-white rounded-full transition shadow-md cursor-pointer opacity-90 hover:opacity-100"
+                        title="Delete Slide"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-200 line-clamp-2">
+                        {slide.description || "No Description"}
+                      </p>
+                      {slide.link && (
+                        <a
+                          href={slide.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-red-500 hover:text-red-600 font-bold inline-flex items-center gap-1 truncate w-full"
+                        >
+                          <ExternalLink size={10} />
+                          {slide.link}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Change Login Credentials Card */}
