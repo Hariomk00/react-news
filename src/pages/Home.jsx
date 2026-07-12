@@ -110,8 +110,8 @@ const Home = () => {
             <div className="relative w-full overflow-hidden h-[300px] md:h-[450px]">
               {/* Carousel Slides Container */}
               <div 
-                className="flex w-full h-full transition-transform duration-700 ease-in-out"
-                style={{ transform: `translateX(-${currentSlideIndex * 100}%)` }}
+                className="flex flex-row-reverse w-full h-full transition-transform duration-700 ease-in-out"
+                style={{ transform: `translateX(${currentSlideIndex * 100}%)` }}
               >
                 {displaySlides.map((slide) => (
                   <div key={slide.id} className="min-w-full w-full h-full relative">
