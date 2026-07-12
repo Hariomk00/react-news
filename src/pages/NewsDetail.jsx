@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
+import { slugify } from "../utils/slugify";
 import Header from "../components/Header";
 import { Calendar, Tag, ArrowLeft } from "lucide-react";
 import { useSEO } from "../hooks/useSEO";
@@ -79,21 +80,73 @@ const NewsDetail = () => {
       setLoading(true);
       setError(null);
       try {
-        const docRef = doc(db, "news", id);
-        const docSnap = await getDoc(docRef);
+        let articleData = null;
+        let articleId = null;
 
-        if (!docSnap.exists()) {
+        // 1. Check if 'id' is a 20-character Firestore ID (alphanumeric)
+        const isFirestoreId = id && id.length === 20 && /^[a-zA-Z0-9]+$/.test(id);
+        
+        if (isFirestoreId) {
+          const docRef = doc(db, "news", id);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            articleData = docSnap.data();
+            articleId = docSnap.id;
+          }
+        }
+
+        // 2. Query by exact title (URL decoded)
+        if (!articleData) {
+          const decodedTitle = decodeURIComponent(id);
+          const q = query(collection(db, "news"), where("title", "==", decodedTitle), limit(1));
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            const firstDoc = querySnapshot.docs[0];
+            articleData = firstDoc.data();
+            articleId = firstDoc.id;
+          }
+        }
+
+        // 3. Query by slug field
+        if (!articleData) {
+          const targetSlug = slugify(decodeURIComponent(id));
+          const qSlug = query(collection(db, "news"), where("slug", "==", targetSlug), limit(1));
+          const querySnapshotSlug = await getDocs(qSlug);
+          if (!querySnapshotSlug.empty) {
+            const firstDoc = querySnapshotSlug.docs[0];
+            articleData = firstDoc.data();
+            articleId = firstDoc.id;
+          }
+        }
+
+        // 4. Fallback: Search in latest articles for slug match (handles older documents)
+        if (!articleData) {
+          const targetSlug = slugify(decodeURIComponent(id));
+          const qLatest = query(collection(db, "news"), orderBy("createdAt", "desc"), limit(200));
+          const querySnapshotLatest = await getDocs(qLatest);
+          
+          const matchedDoc = querySnapshotLatest.docs.find(d => {
+            const data = d.data();
+            return slugify(data.title) === targetSlug;
+          });
+          
+          if (matchedDoc) {
+            articleData = matchedDoc.data();
+            articleId = matchedDoc.id;
+          }
+        }
+
+        if (!articleData) {
           setError("News article not found");
           setLoading(false);
           return;
         }
 
-        const data = docSnap.data();
-        setNews(data);
+        setNews(articleData);
 
         // Fetch Category name if category_id exists
-        if (data.category_id) {
-          const catDocRef = doc(db, "categories", data.category_id);
+        if (articleData.category_id) {
+          const catDocRef = doc(db, "categories", articleData.category_id);
           const catDocSnap = await getDoc(catDocRef);
           if (catDocSnap.exists()) {
             setCategoryName(catDocSnap.data().name);

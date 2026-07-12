@@ -5,6 +5,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage
 import { db, storage } from "../../firebase";
 import AdminLayout from "../../components/AdminLayout";
 import { ArrowLeft, Save, Upload, Eye, Sparkles, RefreshCw } from "lucide-react";
+import { slugify } from "../../utils/slugify";
 
 // Helper function to strip basic markdown tags for clean plaintext presentation
 const cleanMarkdownToPlainText = (markdown) => {
@@ -326,6 +327,7 @@ const AddEditNews = () => {
 
       const newsData = {
         title,
+        slug: slugify(title),
         short_desc: shortDesc,
         full_content: fullContent,
         category_id: categoryId,

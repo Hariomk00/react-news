@@ -4,6 +4,7 @@ import { doc, getDoc, collection, query, where, orderBy, getDocs } from "firebas
 import { db } from "../firebase";
 import Header from "../components/Header";
 import { useSEO } from "../hooks/useSEO";
+import { getUrlFriendlyTitle } from "../utils/slugify";
 
 const CategoryPage = () => {
   const { id } = useParams();
@@ -105,7 +106,7 @@ const CategoryPage = () => {
                 {newsList.map((news) => (
                   <Link
                     key={news.id}
-                    to={`/news/${news.id}`}
+                    to={`/news/${getUrlFriendlyTitle(news.title)}`}
                     className="group flex flex-col bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-sm hover:shadow-lg border border-gray-100 dark:border-gray-800 transition duration-300"
                   >
                     {/* Card Image */}
