@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Allow: /category/
+Allow: /news/
+Disallow: /admin/
+Disallow: /admin/*
+
+Sitemap: https://indiianews.in/sitemap.xml
